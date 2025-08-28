@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>购物车</title>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #ccc;
+        }
+        .cart {
+            max-width: 900px;
+            margin: 40px auto;
+            background:#fff;
+            box-shadow: 0 0 2px 1px rgba(0,0,0,.3);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+       #form-info {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        text-align: center;
+       }
+       #form-info input {
+            width: 100px;
+            height: 30px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin: 10px 0;
+            padding: 5px;
+        }
+        button {
+            border: none;
+            width: 50px;
+            height: 30px;
+            color: #fff;
+            background: orange;
+            border-radius: 5px;
+            padding: 8px;
+        }
+        table {
+            /* 给表格设置宽度 */
+            width: 100%;
+            padding: 10px;
+            /* 去除双倍边框 */
+            border-collapse: collapse; 
+            
+        }
+        td,th {
+            padding: 10px;
+             border: 1px solid #c7c4c4;
+        }
+        p {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="cart">
+        <h2>购物车</h2>
+        <form id="form-info">
+        <input type="text" id="name" placeholder="商品名称" required>
+        <input type="number" placeholder="单价" id="price">
+        <input type="number" id="count" value="1">
+        <br>
+        <button id="add">添加 </button>
+        </form>
+        <table>
+            <thead>
+                <tr>
+                <th>全选 <input type="checkbox"  id="allchek" ></th>
+                <th>商品名称</th>
+                <th>商品单价</th>
+                <th>商品数量</th>
+                <th>小计</th>
+                <th>操作</th>    
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <p>总价：0.00</p>
+        <button id="clear">清空</button>
+    </div>
+    <script>
+        // 创建一个 购物车类
+        class Cart {
+            // 类的“构造函数”，当你用 new Cart() 创建实例时，这段代码会自动执行 
+            // 相当于为每一个新的实例对象单独创建一个新的空数组，用于存放该购物车的商品
+            constructor() {
+                this.item = [] // 这个空数组 item用来存放商品信息
+            }
+            // 方法
+            add(n,p,c){
+                //新增的时候就添加了一个唯一的id
+                const id = Date.now();
+                this.item.push({name:n,price:p,count:c,id:id,total:p*c,isCheckbox:false})
+            }
+            remove(id){
+                // [59, 61, 48, 88, 92].filter(s => s >= 60)   // 留及格
+                // filter留下满足条件的 
+                this.item = this.item.filter((el)=> el.id != id) //这里用!= 而不是用!== 的原因是因为 data-id里面的id 是字符串，而数组里面的id是数字
+                localStorage.setItem('cart',JSON.stringify(this.item))
+            }
+            editor(p,c,id){
+                this.item.forEach((el) => {
+                    if(el.id === Number(id)) {
+                        el.price = p;
+                        el.count = c;
+                        el.total =p*c;
+                    }
+                })
+                localStorage.setItem('cart',JSON.stringify(this.item))
+            }
+            clear(){
+                // 清空商品信息
+                this.item = [];
+                localStorage.setItem('cart',JSON.stringify(this.item))
+            }
+        }
+        // 创建一个购物车对象
+        const obj = new Cart()
+        obj.item = JSON.parse(localStorage.getItem('cart')) || []
+        // const cart = [{name:'鲜花', price:10,count:2}]
+        // 渲染函数
+        const render = () => {
+         const licar =  obj.item.map((ele,index )=> {
+                return ` 
+                <tr data-id ='${ele.id}'>
+                    <td><input type="checkbox" id="${index}" class ='checks' ${ele.isCheckbox?'checked':''}></td>
+                    <td>${ele.name}</td>
+                    <td>${ele.price}</td>
+                    <td>${ele.count}</td>
+                    <td>${ele.total}</td>
+                    <td><div class="btn">
+                    <button class="del">删除</button>
+                    <button class="editor">修改</button>
+                </div>
+                </td>
+                </tr>
+            </li>`
+            }).join('')
+            document.querySelector('tbody').innerHTML = licar
+        }
+        // 首次渲染
+        render()
+        const form = document.getElementById('form-info')
+        // 添加
+        form.addEventListener('submit', e =>{
+            e.preventDefault() //阻止默认跳转
+            const name = document.getElementById('name').value
+            const price = document.getElementById('price').value
+            const count = document.getElementById('count').value
+            // if(!name ||!price ||!count) alert('请输入商品信息') 因为在html的input里面写了required 能够对文本框进行校验
+            obj.add(name,price,count)
+            localStorage.setItem('cart',JSON.stringify(obj.item))
+            e.target.reset()
+            render()
+        })
+        document.querySelector('tbody').addEventListener('click',e => {
+            //删除
+            if(e.target.classList.contains('del')){
+                // 获取点击按钮的id号
+                const id = e.target.closest('tr').dataset.id
+                // 在购物车数组中去寻找相同的id 找到索引删除
+                // 方法一 通过循环遍历数组，用splice删除对应的数组
+                // obj.item.forEach((e,index) => {
+                //     if(e.id == id) {
+                //         obj.item.splice(index,1)
+                //     }
+                // })id
+                // 方法二
+                obj.remove(id)
+                render()
+            }
+            if(e.target.classList.contains('editor')) {
+                const id = e.target.closest('tr').dataset.id
+                const price = prompt('请输入修改的商品价格')
+                const count = prompt('请输入修改的商品数量')
+                obj.editor(price,count,id)
+                render()
+            }
+        })
+        // 清空
+        document.getElementById('clear').addEventListener('click', () =>{
+            obj.clear()
+            render()
+        })
+        //计算
+        function calculate () {
+            // 将obj.item数组里面的小计相加,相加的时候做一个判断,只有被选中的才相加
+            const totals = obj.item.reduce((sum,pre) => {
+                return pre.isCheckbox ? sum + pre.total: sum
+            },0)
+            
+           document.querySelector('p').innerHTML = `总价：${totals}` 
+        }
+        // 复选框点击事件
+        document.querySelector('tbody').addEventListener('change',e => {
+            if(e.target.classList.contains('checks')){
+                // 拿到点击元素的id
+                const id = e.target.id;
+                // e.target.checked获取当前的复选框状态 将这个状态赋值给对应的复选框
+                obj.item[id].isCheckbox = e.target.checked
+                localStorage.setItem('cart',JSON.stringify(obj.item))
+                
+                calculate()
+                render()
+                allchek()
+            }
+        })
+        // 全选框
+        const allc =  document.getElementById('allchek')
+        allc.addEventListener('change',e => {
+           obj.item.forEach(ele =>{
+            ele.isCheckbox = e.target.checked
+           })
+            localStorage.setItem('cart',JSON.stringify(obj.item))
+            calculate()
+            render()
+        })
+        //反选
+        function allchek() {
+        const result =  obj.item.every (e => e.isCheckbox)
+        allc.checked = result
+        }
+        
+    </script>
+</body>
+</html>
