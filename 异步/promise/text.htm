@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        //promise是一个 异步容器，代表一个尚未完成但是终究会成功或者失败的操作
+        //promis有三种状态：pending[待定状态]初始状态  fulfilled[实现]操作成功 rejected[拒绝]操作失败
+
+        // 创建一个promise对象， 立即就执行传入的执行器函数 这个执行器函数有两个参数：reslove和reject
+        //约定俗成第一个是resolve，第二个是reject
+        const p = new Promise((resolve,reject) => {
+            // 第一个形参吧promise标记为成功的回调，第二个形参把promise标记成失败的回调
+            
+            // promise的状态一旦落地就不可再变，后续的resolve和reject都会被忽略所以定时器内的逻辑永远得不到机会执行
+            // reject('fail')  //这里是把promise标记成失败回调，并把结果值’fail‘传出去 promise完成，此时promise状态处于成功态
+            setTimeout(() => Math.random() > 0.5 ? resolve('pass') :reject('out'),1000)
+        })
+        // 注册成功回调
+        p.then(result => {
+            console.log('我是成功'+result); //result的值是被resolve（value）传进来的值
+
+        }).catch(err => { //注册失败回调 仅当promise被reject时才执行
+            console.log('我是失败'+err);
+            
+        })
+        
+        fetch('https://api.github.com/users/octocat')
+  .then(res => res.json())   // res.json() 也是 Promise
+  .then(dat => console.log(dat))
+  .catch(console.error);
+
+       
+    </script>
+</body>
+</html>

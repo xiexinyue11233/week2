@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+         // Promise.all 这个方法可以将多个promise实例对象包装成一个新的promise实例，
+         // 成功的时候返回的是一个结果数组，失败就返回最先失败状态的值
+        // promise.all 全部成功才算成功
+        let p1 = new Promise((resolve,reject)=>{resolve('success')})
+        let p2 = new Promise((resolve,reject)=>{resolve('成功')})
+        let p3 = Promise.resolve('yes')
+        let p4 = Promise.reject('fail')
+        Promise.all([p1,p2,p3]).then((result)=>{  //p1、p2、p3 都成功，当promise.all全部加载完成，就会把兑现值按照顺序组成数组返回
+            console.log(result);
+            
+        }).catch((err)=>{  //Uncaught (in promise) fail 控制台出现这个
+        //  是因为 p4 没有被放到promise.all里面被单独挂起没有任何.catch 浏览器就会报这个
+             
+            console.log(err); 
+        })
+
+        //
+        Promise.all([p1,p2,p3,p4]).then(result => {
+            console.log(result);
+            
+        }).catch(err => {
+            console.log(err); //遇到p4 是失败的，因此会进入.catch
+            
+        })
+    </script>
+</body>
+</html>

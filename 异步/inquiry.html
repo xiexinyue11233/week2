@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        body {
+            font-family: Arial;
+            margin: 30px;
+        }
+
+        #repos li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>GitHub 仓库查询</h1>
+    <input id="username" placeholder="GitHub 用户名" value="octocat">
+    <button id="search">查询</button>
+    <ul id="repos"></ul>
+    <script>
+        // 封装fetch 返回promise  
+        function getRepos(user) {
+            // https://api.github.com/users/${user}/repos?per_page=100 是一条查询仓库列表的URL 
+            // 浏览器或者fetch  访问后，会收到 JSON 数组，每个元素就是一条仓库信息
+            return fetch(` https://api.github.com/users/${user}/repos?per_page=100`) //fetch(...)返回一个 Promise
+                .then(res => { //.then这里promise 兑现 
+                    if (!res.ok) throw new Error('出错了：' + `${res.status}`)
+                    console.log(res);//这里的res就只是普通的内置对象
+                    //res.json() 不是普通的同步函数，而是异步的 它要做下面两件事读取网络流 把读取到的文本解析成 JSON
+                    //因为这两步都很耗时，所以浏览器把它设计成 返回一个新的 Promise
+                    return res.json() 
+                })
+                .then(data =>{  //再开一条链   链式调用就是连续写 .then(...).then(...).catch(...) 每一步的返回值（或抛出的错误）会自动被包成一个新的 Promise 继续往下传
+                    console.log(data) //打印到控制台 这里的data是数组对象
+
+                    // 只要 .then() 没有 return，或者它的返回值被丢弃了，如果这条链就断了 后面await就整条连就没有返回值
+                     return data; //把原数组继续传下去  确保主链没有断掉，await能够取到值  
+                     //链式调用的每一步 都会自动把返回值包成新的 Promise，所以无论中间返回什么，函数最终拿到的永远是最后一个 Promise。
+                 }
+                )
+                .catch(console.error);//任何阶段抛出的异常打印到控制台
+                    
+        }
+        //标记函数 为“异步函数”，保证：该函数永远返回 Promise 允许在内部使用 await
+        async function renderRepos() {
+            const user = document.getElementById('username').value.trim();
+            if (!user) return alert('请输入用户名');
+            const list = document.getElementById('repos');
+            list.innerHTML = '加载中...';
+
+            //用try...catch 来捕获异常
+            try {
+                //await 只能放在 async 函数里
+                // await 包在 try…catch 不写 try…catch 时，Promise 被拒绝会冒成未捕获错误
+                // await 会把 Promise 的兑现值 解包出来，把异步流程“暂停”到当前行，等结果到了再继续往下执行。
+                const repos = await getRepos(user) //getRepos(user)返回的是promise对象  通过await解包promise对象得到里面的值
+                list.innerHTML = repos.map(r => `<li>${r.name} ⭐ ${r.stargazers_count}</li>`).join('')
+            } catch (err) {
+                list.innerHTML = `出错了ya：${err.message}`;
+            }
+        }
+        document.getElementById('search').addEventListener('click', renderRepos);
+    </script>
+</body>
+
+</html>
